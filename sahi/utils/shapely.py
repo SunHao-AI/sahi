@@ -46,6 +46,7 @@ def get_shapely_multipolygon(coco_segmentation: List[List]) -> MultiPolygon:
     for coco_polygon in coco_segmentation:
         point_list = list(zip(coco_polygon[0::2], coco_polygon[1::2]))
         shapely_polygon = Polygon(point_list)
+        shapely_polygon = shapely_polygon if shapely_polygon.is_valid else make_valid(shapely_polygon)
         polygon_list.append(shapely_polygon)
     shapely_multipolygon = MultiPolygon(polygon_list)
 
