@@ -4,7 +4,6 @@
 from typing import List, Optional, Union
 
 from shapely.geometry import CAP_STYLE, JOIN_STYLE, GeometryCollection, MultiPolygon, Polygon, box
-from shapely.geometry.base import BaseGeometry
 from shapely.validation import make_valid
 
 
@@ -41,8 +40,12 @@ def get_shapely_multipolygon(coco_segmentation: List[List]) -> MultiPolygon:
         elif isinstance(geometry, GeometryCollection):
             # filter out GeometryCollections
             polygons = max(geometry.geoms, key=lambda p: p.area)
-
-            return MultiPolygon(polygons) if polygons else MultiPolygon()
+            if polygons.is_empty:
+                return MultiPolygon()
+            elif isinstance(polygons, Polygon):
+                return MultiPolygon([polygons])
+            else:
+                return MultiPolygon(polygons)
         return MultiPolygon()
 
     polygon_list = []
@@ -305,9 +308,9 @@ class ShapelyAnnotation:
         intersection = self.multipolygon.intersection(polygon)
         # if polygon is box then set slice_box property
         if (
-            len(polygon.exterior.xy[0]) == 5
-            and polygon.exterior.xy[0][0] == polygon.exterior.xy[0][1]
-            and polygon.exterior.xy[0][2] == polygon.exterior.xy[0][3]
+                len(polygon.exterior.xy[0]) == 5
+                and polygon.exterior.xy[0][0] == polygon.exterior.xy[0][1]
+                and polygon.exterior.xy[0][2] == polygon.exterior.xy[0][3]
         ):
             coco_bbox, voc_bbox = get_bbox_from_shapely(polygon)
             slice_bbox = coco_bbox
